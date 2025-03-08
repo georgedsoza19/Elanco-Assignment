@@ -1,75 +1,58 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState } from "react";
+import CountryCard from "../components/CountryCard";
+import SearchBar from "../components/SearchBar";
+import RegionFilter from "../components/RegionFilter";
+import useFetchCountries from "../hooks/useFetchCountries";
+import CardSkeleton from "../components/CardSkeleton";
+import ErrorPage from "../components/ErrorPage";
+
+export interface Country {
+  name: string;
+  flag: string;
+  region: string;
+  code: string;
+  timezone: string;
+}
 
 export default function Home() {
-  const [countries, setCountries] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [queryParams, setQueryParams] = useState("");
 
-  useEffect(() => {
-    const fetchCountries = async () => {
-      try {
-        const response = await axios.get('http://localhost:3001/countries');
-        setCountries(response.data);
-        setLoading(false);
-      } catch (err) {
-        setError('Failed to load countries');
-        setLoading(false);
-      }
-    };
-    fetchCountries();
-  }, []);
+  const { countries, loading, error } = useFetchCountries(queryParams);
 
-  if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
-  if (error) return <p className="text-red-500">{error}</p>;
-
-  const filteredCountries = countries.filter((country: any) =>
-    country.name.includes(searchTerm)
-  );
-
+  if (error) return <ErrorPage />;
   return (
-    <div className="p-6">
-      {/* Search Input */}
-      <div className="mb-4">
-        <label className="block text-gray-700">
-          Search for a Country
-        </label>
-        <input
-          id="search"
-          type="text"
-          placeholder="Enter country name"
-          className="border border-gray-300"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+    <div className="container mx-auto bg-gray-100 dark:bg-gray-900 h-screen flex flex-col">
+      {/* Fixed Top Section */}
+      <div className="flex-shrink-0 p-4">
+        <h1 className="text-2xl font-bold text-white mb-6">
+          Country Data Dashboard
+        </h1>
+        <div className="flex flex-col sm:flex-row justify-between gap-4">
+          <SearchBar
+            onSearch={(params) => {
+              setQueryParams(params);
+            }}
+          />
+          <RegionFilter
+            setRegionPath={(params) => {
+              setQueryParams(params);
+            }}
+          />
+        </div>
       </div>
 
-      {/* Display filtered countries */}
-      <div className="grid grid-cols-4">
-        {filteredCountries.length > 0 ? (
-          filteredCountries.map((country) => (
-            <div key={country.name} className="bg-white rounded-lg shadow-md p-4">
-              {/* Accessing the flag from the 'flag' property */}
-              {country.flag ? (
-                <img
-                  className="w-10 h-10 object-cover"
-                  src={country.flag}
-                  alt={`Flag of ${country.name}`}
-                />
-              ) : (
-                <p className="text-center">No Flag Available</p>
-              )}
-              <div className="mt-2 text-center">
-                <h2>{country.name}</h2>
-                <p>{country.region}</p>
-              </div>
-            </div>
-          ))
-        ) : (
-          <p className="text-gray-500">No countries found.</p>
-        )}
+      {/* Scrollable Section */}
+      <div className="overflow-y-auto flex-grow p-4 pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {loading
+            ? Array.from({ length: 8 }).map((_, index) => (
+                <CardSkeleton key={index} />
+              ))
+            : countries.map((country: Country) => (
+                <CountryCard key={country.name} country={country} />
+              ))}
+        </div>
       </div>
     </div>
   );
-};
+}

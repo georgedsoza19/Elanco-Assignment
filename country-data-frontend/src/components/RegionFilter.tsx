@@ -11,6 +11,7 @@ const RegionFilter: React.FC<RegionFilterProps> = ({ setRegionPath }) => {
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
+    if (value === region && value !== "") return;
     setRegion(value);
     let path = "";
     if (value) path += `/region/${value}`;
